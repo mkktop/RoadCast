@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/mkk//**)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/nicoulaj/gradle-wrapper/refs/heads/master/gradlew\" -o gradlew)",
+      "Bash(chmod +x gradlew)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/nicoulaj/gradle-wrapper/refs/heads/master/gradlew.bat\" -o gradlew.bat)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/gradle/gradle/v8.9.0/gradlew\" -o gradlew)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/gradle/gradle/v8.9.0/gradlew.bat\" -o gradlew.bat)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/gradle/gradle/v8.9.0/gradle/wrapper/gradle-wrapper.jar\" -o gradle/wrapper/gradle-wrapper.jar)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

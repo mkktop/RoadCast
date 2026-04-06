@@ -1,0 +1,24 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Kotlin
+*.class
+
+# Build outputs
+/app/build
+/build
+
+# Keystore (never commit)
+*.jks
+*.keystore
+
+# Gradle
+.gradle/
