@@ -34,17 +34,14 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
     fun addStops(supermarketIds: List<Long>) = viewModelScope.launch {
         val currentStops = stopRepository.getByDateOnce(todayDate)
         var maxIndex = currentStops.maxOfOrNull { it.orderIndex } ?: -1
-        val existingIds = currentStops.map { it.supermarketId }.toSet()
-        val newStops = supermarketIds
-            .filter { it !in existingIds }
-            .map { supermarketId ->
-                maxIndex++
-                RouteStop(
-                    date = todayDate,
-                    supermarketId = supermarketId,
-                    orderIndex = maxIndex
-                )
-            }
+        val newStops = supermarketIds.map { supermarketId ->
+            maxIndex++
+            RouteStop(
+                date = todayDate,
+                supermarketId = supermarketId,
+                orderIndex = maxIndex
+            )
+        }
         if (newStops.isNotEmpty()) {
             stopRepository.insertAll(newStops)
         }
@@ -92,8 +89,21 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
         stopRepository.update(stop.copy(status = StopStatus.SKIPPED))
     }
 
+    fun markAsPending(stop: RouteStop) = viewModelScope.launch {
+        stopRepository.update(stop.copy(status = StopStatus.PENDING, completedAt = null))
+    }
+
     fun clearTodayRoute() = viewModelScope.launch {
         stopRepository.deleteByDate(todayDate)
+    }
+
+    fun updateStopsOrder(reorderedStops: List<RouteStop>) = viewModelScope.launch {
+        stopRepository.updateAll(reorderedStops)
+    }
+
+    fun updateDeliveryItems(stop: RouteStop, items: String?) = viewModelScope.launch {
+        val trimmed = items?.trim()
+        stopRepository.update(stop.copy(deliveryItems = if (trimmed.isNullOrEmpty()) null else trimmed))
     }
 }
 

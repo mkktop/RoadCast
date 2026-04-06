@@ -67,6 +67,9 @@ dependencies {
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.5")
 
+    // Reorderable LazyColumn (drag-to-reorder)
+    implementation("sh.calvin.reorderable:reorderable:2.4.3")
+
     // Room (local database)
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")

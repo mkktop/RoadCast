@@ -33,6 +33,7 @@ fun ConfigScreen(
     var editingSupermarket by remember { mutableStateOf<Supermarket?>(null) }
     var showDeleteSupermarketDialog by remember { mutableStateOf<Supermarket?>(null) }
 
+    val expandedAreas = remember { mutableStateSetOf<Long>() }
     val supermarketsByArea = supermarkets.groupBy { it.areaId }
 
     Scaffold(
@@ -85,42 +86,50 @@ fun ConfigScreen(
 
                 areas.forEach { area ->
                     val areaMarkets = supermarketsByArea[area.id] ?: emptyList()
+                    val isExpanded = area.id in expandedAreas
 
-                    // Area header
+                    // Area header (clickable to toggle)
                     item(key = "area_${area.id}") {
                         AreaSectionHeader(
                             area = area,
                             supermarketCount = areaMarkets.size,
+                            isExpanded = isExpanded,
+                            onToggle = {
+                                if (isExpanded) expandedAreas.remove(area.id)
+                                else expandedAreas.add(area.id)
+                            },
                             onEdit = { editingArea = area },
                             onDelete = { showDeleteAreaDialog = area }
                         )
                     }
 
-                    // Supermarkets under this area
-                    items(
-                        items = areaMarkets,
-                        key = { it.id }
-                    ) { market ->
-                        SupermarketRow(
-                            supermarket = market,
-                            onEdit = { editingSupermarket = market },
-                            onDelete = { showDeleteSupermarketDialog = market }
-                        )
-                    }
-
-                    // Add supermarket button
-                    item(key = "add_market_${area.id}") {
-                        TextButton(
-                            onClick = { addingSupermarketForArea = area.id },
-                            modifier = Modifier.padding(start = 16.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
+                    // Only show supermarkets and add button when expanded
+                    if (isExpanded) {
+                        items(
+                            items = areaMarkets,
+                            key = { it.id }
+                        ) { market ->
+                            SupermarketRow(
+                                supermarket = market,
+                                onEdit = { editingSupermarket = market },
+                                onDelete = { showDeleteSupermarketDialog = market }
                             )
-                            Spacer(Modifier.width(4.dp))
-                            Text("添加超市")
+                        }
+
+                        // Add supermarket button
+                        item(key = "add_market_${area.id}") {
+                            TextButton(
+                                onClick = { addingSupermarketForArea = area.id },
+                                modifier = Modifier.padding(start = 16.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text("添加超市")
+                            }
                         }
                     }
 
@@ -253,6 +262,8 @@ fun ConfigScreen(
 private fun AreaSectionHeader(
     area: DeliveryArea,
     supermarketCount: Int,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -264,20 +275,34 @@ private fun AreaSectionHeader(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    area.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+            // Clickable area to toggle expand/collapse
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    if (isExpanded) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
+                    contentDescription = if (isExpanded) "收起" else "展开",
+                    tint = MaterialTheme.colorScheme.primary
                 )
-                Text(
-                    "$supermarketCount 个超市",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
+                Spacer(Modifier.width(8.dp))
+                Column {
+                    Text(
+                        area.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "$supermarketCount 个超市",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
             }
             IconButton(onClick = onEdit) {
                 Icon(Icons.Default.Edit, contentDescription = "编辑", modifier = Modifier.size(20.dp))

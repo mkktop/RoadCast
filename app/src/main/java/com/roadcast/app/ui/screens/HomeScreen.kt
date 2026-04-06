@@ -222,6 +222,49 @@ fun HomeScreen(
                                         )
                                     }
                                 }
+                                // Delivery items list
+                                if (!currentStop.deliveryItems.isNullOrBlank()) {
+                                    Spacer(Modifier.height(8.dp))
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = MaterialTheme.shapes.medium
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(
+                                                    Icons.Default.Inventory2,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                                Spacer(Modifier.width(6.dp))
+                                                Text(
+                                                    "送货清单",
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                            Spacer(Modifier.height(6.dp))
+                                            currentStop.deliveryItems.lines()
+                                                .filter { it.isNotBlank() }
+                                                .forEach { item ->
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Text(
+                                                            "•",
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            color = MaterialTheme.colorScheme.outline
+                                                        )
+                                                        Spacer(Modifier.width(8.dp))
+                                                        Text(
+                                                            item.trim(),
+                                                            style = MaterialTheme.typography.bodyMedium
+                                                        )
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
                                 Spacer(Modifier.height(16.dp))
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),

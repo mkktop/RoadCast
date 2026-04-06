@@ -28,5 +28,6 @@ data class RouteStop(
     val orderIndex: Int,
     val status: StopStatus = StopStatus.PENDING,
     val completedAt: Long? = null,
-    val remark: String? = null
+    val remark: String? = null,
+    val deliveryItems: String? = null  // 送货清单，每行一项
 )

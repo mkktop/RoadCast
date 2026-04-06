@@ -28,6 +28,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun markSkipped(stop: RouteStop) = viewModelScope.launch {
         stopRepository.update(stop.copy(status = StopStatus.SKIPPED))
     }
+
+    fun markAsPending(stop: RouteStop) = viewModelScope.launch {
+        stopRepository.update(stop.copy(status = StopStatus.PENDING, completedAt = null))
+    }
 }
 
 class HomeViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
