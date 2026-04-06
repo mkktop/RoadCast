@@ -1,4 +1,4 @@
-package com.siji.app.data
+package com.roadcast.app.data
 
 import android.content.Context
 import androidx.room.Database
@@ -18,7 +18,7 @@ abstract class DeliveryDatabase : RoomDatabase() {
                 Room.databaseBuilder(
                     context.applicationContext,
                     DeliveryDatabase::class.java,
-                    "siji_database"
+                    "roadcast_database"
                 ).build().also { INSTANCE = it }
             }
         }

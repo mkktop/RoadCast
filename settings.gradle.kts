@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "siji"
+rootProject.name = "RoadCast"
 include(":app")

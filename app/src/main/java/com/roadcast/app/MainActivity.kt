@@ -1,4 +1,4 @@
-package com.siji.app
+package com.roadcast.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -9,11 +9,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.siji.app.ui.navigation.Screen
-import com.siji.app.ui.screens.*
-import com.siji.app.ui.theme.SijiTheme
-import com.siji.app.viewmodel.DeliveryViewModel
-import com.siji.app.viewmodel.DeliveryViewModelFactory
+import com.roadcast.app.ui.navigation.Screen
+import com.roadcast.app.ui.screens.*
+import com.roadcast.app.ui.theme.RoadCastTheme
+import com.roadcast.app.viewmodel.DeliveryViewModel
+import com.roadcast.app.viewmodel.DeliveryViewModelFactory
 import java.util.*
 
 class MainActivity : ComponentActivity() {
@@ -21,15 +21,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            SijiTheme {
-                SijiApp()
+            RoadCastTheme {
+                RoadCastApp()
             }
         }
     }
 }
 
 @Composable
-fun SijiApp() {
+fun RoadCastApp() {
     val navController = rememberNavController()
     val viewModel: DeliveryViewModel = viewModel(
         factory = DeliveryViewModelFactory(

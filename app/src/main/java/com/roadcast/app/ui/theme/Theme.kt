@@ -1,4 +1,4 @@
-package com.siji.app.ui.theme
+package com.roadcast.app.ui.theme
 
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -33,7 +33,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun SijiTheme(
+fun RoadCastTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {

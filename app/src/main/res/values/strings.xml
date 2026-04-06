@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">司机助手</string>
+    <string name="app_name">路信</string>
     <string name="delivery_list">配送列表</string>
     <string name="add_delivery">添加配送</string>
     <string name="settings">设置</string>

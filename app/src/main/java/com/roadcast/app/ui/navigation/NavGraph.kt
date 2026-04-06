@@ -1,4 +1,4 @@
-package com.siji.app.ui.navigation
+package com.roadcast.app.ui.navigation
 
 sealed class Screen(val route: String) {
     data object Home : Screen("home")

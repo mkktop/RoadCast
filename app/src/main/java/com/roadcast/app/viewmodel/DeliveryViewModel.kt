@@ -1,8 +1,8 @@
-package com.siji.app.viewmodel
+package com.roadcast.app.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.*
-import com.siji.app.data.*
+import com.roadcast.app.data.*
 import kotlinx.coroutines.launch
 
 class DeliveryViewModel(application: Application) : AndroidViewModel(application) {

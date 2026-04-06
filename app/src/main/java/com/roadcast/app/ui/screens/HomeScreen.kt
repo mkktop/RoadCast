@@ -1,4 +1,4 @@
-package com.siji.app.ui.screens
+package com.roadcast.app.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,8 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.siji.app.data.Delivery
-import com.siji.app.data.DeliveryStatus
+import com.roadcast.app.data.Delivery
+import com.roadcast.app.data.DeliveryStatus
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -31,7 +31,7 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("司机助手") },
+                title = { Text("路信") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
