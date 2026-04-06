@@ -7,27 +7,40 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.roadcast.app.data.Delivery
-import com.roadcast.app.data.DeliveryStatus
-import java.text.SimpleDateFormat
-import java.util.*
+import com.roadcast.app.data.*
+import com.roadcast.app.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    pendingCount: Int,
-    deliveringCount: Int,
-    todayDeliveries: List<Delivery>,
-    onAddClick: () -> Unit,
-    onViewAllClick: () -> Unit,
-    onMarkDelivering: (Long) -> Unit,
-    onMarkCompleted: (Long) -> Unit,
+    viewModel: HomeViewModel,
     modifier: Modifier = Modifier
 ) {
+    val stops by viewModel.todayStops.observeAsState(emptyList())
+    val supermarkets by viewModel.allSupermarkets.observeAsState(emptyList())
+    val areas by viewModel.allAreas.observeAsState(emptyList())
+
+    val supermarketMap = supermarkets.associateBy { it.id }
+    val areaMap = areas.associateBy { it.id }
+
+    val pendingStops = stops.filter { it.status == StopStatus.PENDING }
+    val completedStops = stops.filter { it.status == StopStatus.COMPLETED }
+    val skippedStops = stops.filter { it.status == StopStatus.SKIPPED }
+    val currentStop = pendingStops.firstOrNull()
+    val upcomingStops = pendingStops.drop(1)
+
+    val totalCount = stops.size
+    val doneCount = completedStops.size + skippedStops.size
+    val progress = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f
+
+    var showCompleted by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -37,229 +50,341 @@ fun HomeScreen(
                 )
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onAddClick) {
-                Icon(Icons.Default.Add, contentDescription = "添加配送")
-            }
-        },
         modifier = modifier
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item { Spacer(Modifier.height(8.dp)) }
-
-            // Stats cards
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    StatCard(
-                        title = "待配送",
-                        count = pendingCount,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f)
+        if (totalCount == 0) {
+            // Empty state
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Default.LocalShipping,
+                        contentDescription = null,
+                        modifier = Modifier.size(80.dp),
+                        tint = MaterialTheme.colorScheme.outline
                     )
-                    StatCard(
-                        title = "配送中",
-                        count = deliveringCount,
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.weight(1f)
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "今日暂无行程",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "前往「行程」页面添加配送站点",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outlineVariant
                     )
                 }
             }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item { Spacer(Modifier.height(8.dp)) }
 
-            // Today's deliveries
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "今日配送",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    TextButton(onClick = onViewAllClick) {
-                        Text("查看全部")
+                // Progress section
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "今日进度",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "${completedStops.size}/$totalCount",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            LinearProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp),
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "已完成 ${completedStops.size}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                                if (skippedStops.isNotEmpty()) {
+                                    Text(
+                                        "已跳过 ${skippedStops.size}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
+                                Text(
+                                    "待配送 ${pendingStops.size}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
                     }
                 }
-            }
 
-            if (todayDeliveries.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 48.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Default.LocalShipping,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = MaterialTheme.colorScheme.outline
-                            )
-                            Spacer(Modifier.height(16.dp))
+                // Current stop
+                if (currentStop != null) {
+                    item {
+                        val supermarket = supermarketMap[currentStop.supermarketId]
+                        val area = supermarket?.let { areaMap[it.areaId] }
+
+                        Text(
+                            "当前站点",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(20.dp)) {
+                                Text(
+                                    supermarket?.name ?: "未知超市",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (area != null) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                        shape = MaterialTheme.shapes.extraSmall
+                                    ) {
+                                        Text(
+                                            area.name,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                                if (!supermarket?.address.isNullOrBlank()) {
+                                    Spacer(Modifier.height(8.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.LocationOn,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.outline
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(
+                                            supermarket.address,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                if (!supermarket?.phone.isNullOrBlank()) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.Phone,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.outline
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(
+                                            supermarket.phone,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.height(16.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Button(
+                                        onClick = { viewModel.markCompleted(currentStop) },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Default.CheckCircle, contentDescription = null)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("完成配送")
+                                    }
+                                    OutlinedButton(
+                                        onClick = { viewModel.markSkipped(currentStop) }
+                                    ) {
+                                        Text("跳过")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Upcoming stops
+                if (upcomingStops.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "待配送 (${upcomingStops.size})",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    items(upcomingStops) { stop ->
+                        val supermarket = supermarketMap[stop.supermarketId]
+                        val area = supermarket?.let { areaMap[it.areaId] }
+                        UpcomingStopItem(
+                            orderIndex = stops.indexOf(stop) + 1,
+                            supermarketName = supermarket?.name ?: "未知",
+                            areaName = area?.name
+                        )
+                    }
+                }
+
+                // Completed stops (collapsible)
+                if (completedStops.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
-                                "暂无配送任务",
-                                style = MaterialTheme.typography.bodyLarge,
+                                "已完成 (${completedStops.size})",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.outline
+                            )
+                            IconButton(onClick = { showCompleted = !showCompleted }) {
+                                Icon(
+                                    if (showCompleted) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = if (showCompleted) "收起" else "展开"
+                                )
+                            }
+                        }
+                    }
+                    if (showCompleted) {
+                        items(completedStops) { stop ->
+                            val supermarket = supermarketMap[stop.supermarketId]
+                            val area = supermarket?.let { areaMap[it.areaId] }
+                            CompletedStopItem(
+                                supermarketName = supermarket?.name ?: "未知",
+                                areaName = area?.name
                             )
                         }
                     }
                 }
-            } else {
-                items(todayDeliveries) { delivery ->
-                    DeliveryCard(
-                        delivery = delivery,
-                        onMarkDelivering = { onMarkDelivering(delivery.id) },
-                        onMarkCompleted = { onMarkCompleted(delivery.id) }
-                    )
-                }
+
+                item { Spacer(Modifier.height(80.dp)) }
             }
-
-            item { Spacer(Modifier.height(80.dp)) }
         }
     }
 }
 
 @Composable
-private fun StatCard(
-    title: String,
-    count: Int,
-    color: androidx.compose.ui.graphics.Color,
-    modifier: Modifier = Modifier
+private fun UpcomingStopItem(
+    orderIndex: Int,
+    supermarketName: String,
+    areaName: String?
 ) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                count.toString(),
-                style = MaterialTheme.typography.headlineMedium,
-                color = color
-            )
-            Text(
-                title,
-                style = MaterialTheme.typography.labelSmall,
-                color = color
-            )
-        }
-    }
-}
-
-@Composable
-private fun DeliveryCard(
-    delivery: Delivery,
-    onMarkDelivering: () -> Unit,
-    onMarkCompleted: () -> Unit
-) {
-    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-    val statusColor = when (delivery.status) {
-        DeliveryStatus.PENDING -> MaterialTheme.colorScheme.primary
-        DeliveryStatus.DELIVERING -> MaterialTheme.colorScheme.secondary
-        DeliveryStatus.COMPLETED -> Green500
-    }
-
-    val statusText = when (delivery.status) {
-        DeliveryStatus.PENDING -> "待配送"
-        DeliveryStatus.DELIVERING -> "配送中"
-        DeliveryStatus.COMPLETED -> "已完成"
-    }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Time column
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.width(56.dp)
+            Surface(
+                color = MaterialTheme.colorScheme.primary,
+                shape = MaterialTheme.shapes.small
             ) {
                 Text(
-                    timeFormat.format(Date(delivery.deliveryTime)),
-                    style = MaterialTheme.typography.titleMedium
+                    "$orderIndex",
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
-
             Spacer(Modifier.width(12.dp))
-
-            // Info column
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    delivery.customerName,
-                    style = MaterialTheme.typography.titleSmall,
+                    supermarketName,
+                    style = MaterialTheme.typography.bodyLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    delivery.address,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(4.dp))
-                Surface(
-                    color = statusColor.copy(alpha = 0.15f),
-                    shape = MaterialTheme.shapes.extraSmall
-                ) {
+                if (areaName != null) {
                     Text(
-                        statusText,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        areaName,
                         style = MaterialTheme.typography.labelSmall,
-                        color = statusColor
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
             }
+        }
+    }
+}
 
-            // Action button
-            when (delivery.status) {
-                DeliveryStatus.PENDING -> {
-                    IconButton(onClick = onMarkDelivering) {
-                        Icon(
-                            Icons.Default.PlayArrow,
-                            contentDescription = "开始配送",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                DeliveryStatus.DELIVERING -> {
-                    IconButton(onClick = onMarkCompleted) {
-                        Icon(
-                            Icons.Default.CheckCircle,
-                            contentDescription = "完成配送",
-                            tint = Green500
-                        )
-                    }
-                }
-                DeliveryStatus.COMPLETED -> {
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        tint = Green500
-                    )
-                }
+@Composable
+private fun CompletedStopItem(
+    supermarketName: String,
+    areaName: String?
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            Icons.Default.CheckCircle,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = Green500
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                supermarketName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.outline
+            )
+            if (areaName != null) {
+                Text(
+                    areaName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
             }
         }
     }
