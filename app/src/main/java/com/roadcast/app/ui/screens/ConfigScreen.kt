@@ -282,6 +282,7 @@ private fun AreaSectionHeader(
             Row(
                 modifier = Modifier
                     .weight(1f)
+                    .clickable(onClick = onToggle)
                     .padding(start = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
