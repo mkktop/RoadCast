@@ -18,6 +18,7 @@ import com.roadcast.app.data.*
 import com.roadcast.app.viewmodel.RouteViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import java.text.Collator
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -88,24 +89,23 @@ fun RouteScreen(
                 }
             }
         } else {
-            var localStops by remember(stops) { mutableStateOf(stops) }
+            var localStops by remember { mutableStateOf(stops) }
+
+            // 仅在站点增减时从数据库同步（不在排序时重置，避免拖拽中闪退）
+            val stopIdSet = stops.map { it.id }.toSet()
+            LaunchedEffect(stopIdSet) {
+                localStops = stops
+            }
 
             val lazyListState = rememberLazyListState()
             val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
-                localStops = localStops.toMutableList().apply {
+                val reordered = localStops.toMutableList().apply {
                     add(to.index, removeAt(from.index))
                 }
-            }
-
-            LaunchedEffect(localStops) {
-                val dbOrder = stops.map { it.id }
-                val localOrder = localStops.map { it.id }
-                if (dbOrder.isNotEmpty() && dbOrder != localOrder) {
-                    val updated = localStops.mapIndexed { index, stop ->
-                        stop.copy(orderIndex = index)
-                    }
-                    viewModel.updateStopsOrder(updated)
-                }
+                localStops = reordered
+                viewModel.updateStopsOrder(reordered.mapIndexed { index, stop ->
+                    stop.copy(orderIndex = index)
+                })
             }
 
             LazyColumn(
@@ -441,7 +441,12 @@ private fun SupermarketPickerDialog(
     } else {
         // Supermarket selection step
         val area = selectedArea!!
-        val areaMarkets = supermarketsByArea[area.id] ?: emptyList()
+        val collator = Collator.getInstance(Locale.CHINESE)
+        val areaMarkets = (supermarketsByArea[area.id] ?: emptyList())
+            .sortedWith(
+                compareByDescending<Supermarket> { it.isFavorite }
+                    .thenBy { collator.getCollationKey(it.name) }
+            )
 
         AlertDialog(
             onDismissRequest = onDismiss,
@@ -494,6 +499,14 @@ private fun SupermarketPickerDialog(
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.weight(1f)
                                 )
+                                if (market.isFavorite) {
+                                    Icon(
+                                        Icons.Default.Star,
+                                        contentDescription = "已收藏",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = StarYellow
+                                    )
+                                }
                             }
                         }
                     }
@@ -529,6 +542,7 @@ private fun SupermarketPickerDialog(
 
 private val Green500 = androidx.compose.ui.graphics.Color(0xFF4CAF50)
 private val Orange500 = androidx.compose.ui.graphics.Color(0xFFFF9800)
+private val StarYellow = androidx.compose.ui.graphics.Color(0xFFFFC107)
 
 @Composable
 private fun DeliveryItemsDialog(

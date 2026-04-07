@@ -52,6 +52,10 @@ class ConfigViewModel(application: Application) : AndroidViewModel(application) 
     fun deleteSupermarket(supermarket: Supermarket) = viewModelScope.launch {
         supermarketRepository.delete(supermarket)
     }
+
+    fun toggleFavorite(supermarket: Supermarket) = viewModelScope.launch {
+        supermarketRepository.update(supermarket.copy(isFavorite = !supermarket.isFavorite))
+    }
 }
 
 class ConfigViewModelFactory(private val application: Application) : ViewModelProvider.Factory {

@@ -23,5 +23,6 @@ data class Supermarket(
     val phone: String? = null,
     val address: String? = null,
     val remark: String? = null,
+    val isFavorite: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )

@@ -113,7 +113,8 @@ fun ConfigScreen(
                             SupermarketRow(
                                 supermarket = market,
                                 onEdit = { editingSupermarket = market },
-                                onDelete = { showDeleteSupermarketDialog = market }
+                                onDelete = { showDeleteSupermarketDialog = market },
+                                onToggleFavorite = { viewModel.toggleFavorite(market) }
                             )
                         }
 
@@ -325,7 +326,8 @@ private fun AreaSectionHeader(
 private fun SupermarketRow(
     supermarket: Supermarket,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onToggleFavorite: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -368,6 +370,14 @@ private fun SupermarketRow(
                 )
             }
         }
+        IconButton(onClick = onToggleFavorite, modifier = Modifier.size(32.dp)) {
+            Icon(
+                if (supermarket.isFavorite) Icons.Default.Star else Icons.Default.StarOutline,
+                contentDescription = if (supermarket.isFavorite) "取消收藏" else "收藏",
+                modifier = Modifier.size(18.dp),
+                tint = if (supermarket.isFavorite) StarYellow else MaterialTheme.colorScheme.outline
+            )
+        }
         IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
             Icon(Icons.Default.Edit, contentDescription = "编辑", modifier = Modifier.size(18.dp))
         }
@@ -381,6 +391,8 @@ private fun SupermarketRow(
         }
     }
 }
+
+private val StarYellow = androidx.compose.ui.graphics.Color(0xFFFFC107)
 
 @Composable
 private fun AreaNameDialog(
