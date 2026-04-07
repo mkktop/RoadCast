@@ -91,7 +91,7 @@ fun RouteScreen(
             var localStops by remember(stops) { mutableStateOf(stops) }
 
             val lazyListState = rememberLazyListState()
-            val reorderableState = rememberReorderableLazyColumnState(lazyListState) { from, to ->
+            val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
                 localStops = localStops.toMutableList().apply {
                     add(to.index, removeAt(from.index))
                 }
