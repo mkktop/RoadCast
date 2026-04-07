@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.roadcast.app.data.*
 import com.roadcast.app.viewmodel.RouteViewModel
 import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.rememberReorderableLazyColumnState
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -113,8 +113,7 @@ fun RouteScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = 16.dp)
-                    .then(reorderableState.reorderModifier),
+                    .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item {
@@ -136,12 +135,18 @@ fun RouteScreen(
                     val area = supermarket?.let { areaMap[it.areaId] }
 
                     ReorderableItem(reorderableState, key = stop.id) { isDragging ->
+                        val dragHandleModifier = if (stop.status == StopStatus.PENDING) {
+                            Modifier.draggableHandle()
+                        } else {
+                            Modifier
+                        }
                         RouteStopItem(
                             index = index + 1,
                             stop = stop,
                             supermarketName = supermarket?.name ?: "未知",
                             areaName = area?.name,
                             isDragging = isDragging,
+                            dragHandleModifier = dragHandleModifier,
                             onClick = { editingStop = stop },
                             onDelete = { viewModel.removeStop(stop) },
                             onComplete = { viewModel.markCompleted(stop) },
@@ -214,6 +219,7 @@ private fun RouteStopItem(
     supermarketName: String,
     areaName: String?,
     isDragging: Boolean,
+    dragHandleModifier: Modifier = Modifier,
     onClick: () -> Unit,
     onDelete: () -> Unit,
     onComplete: () -> Unit,
@@ -252,7 +258,7 @@ private fun RouteStopItem(
                     Icons.Default.DragHandle,
                     contentDescription = "拖拽排序",
                     tint = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.size(20.dp)
+                    modifier = dragHandleModifier.size(20.dp)
                 )
                 Spacer(Modifier.width(8.dp))
             }

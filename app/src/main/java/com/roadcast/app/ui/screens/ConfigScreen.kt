@@ -33,7 +33,7 @@ fun ConfigScreen(
     var editingSupermarket by remember { mutableStateOf<Supermarket?>(null) }
     var showDeleteSupermarketDialog by remember { mutableStateOf<Supermarket?>(null) }
 
-    val expandedAreas = remember { mutableStateSetOf<Long>() }
+    val expandedAreas = remember { mutableStateListOf<Long>() }
     val supermarketsByArea = supermarkets.groupBy { it.areaId }
 
     Scaffold(
@@ -86,7 +86,7 @@ fun ConfigScreen(
 
                 areas.forEach { area ->
                     val areaMarkets = supermarketsByArea[area.id] ?: emptyList()
-                    val isExpanded = area.id in expandedAreas
+                    val isExpanded = expandedAreas.contains(area.id)
 
                     // Area header (clickable to toggle)
                     item(key = "area_${area.id}") {
