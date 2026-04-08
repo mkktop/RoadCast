@@ -99,13 +99,19 @@ fun RouteScreen(
 
             val lazyListState = rememberLazyListState()
             val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
-                val reordered = localStops.toMutableList().apply {
-                    add(to.index, removeAt(from.index))
+                // from.index / to.index 是 LazyColumn 绝对索引，需要减去 header 偏移量
+                val headerOffset = 1
+                val fromIndex = from.index - headerOffset
+                val toIndex = to.index - headerOffset
+                if (fromIndex in localStops.indices && toIndex in localStops.indices) {
+                    val reordered = localStops.toMutableList().apply {
+                        add(toIndex, removeAt(fromIndex))
+                    }
+                    localStops = reordered
+                    viewModel.updateStopsOrder(reordered.mapIndexed { index, stop ->
+                        stop.copy(orderIndex = index)
+                    })
                 }
-                localStops = reordered
-                viewModel.updateStopsOrder(reordered.mapIndexed { index, stop ->
-                    stop.copy(orderIndex = index)
-                })
             }
 
             LazyColumn(
