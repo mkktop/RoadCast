@@ -91,10 +91,21 @@ fun RouteScreen(
         } else {
             var localStops by remember { mutableStateOf(stops) }
 
-            // 仅在站点增减时从数据库同步（不在排序时重置，避免拖拽中闪退）
-            val stopIdSet = stops.map { it.id }.toSet()
-            LaunchedEffect(stopIdSet) {
-                localStops = stops
+            // 从数据库同步：站点增减时全量同步，数据变更时保留本地排序
+            LaunchedEffect(stops) {
+                val stopMap = stops.associateBy { it.id }
+                val localIds = localStops.map { it.id }.toSet()
+                val dbIds = stops.map { it.id }.toSet()
+                if (localIds != dbIds) {
+                    // 站点增减 - 全量同步
+                    localStops = stops
+                } else {
+                    // 仅数据变更（如送货清单）- 保留本地拖拽顺序，更新数据
+                    val updated = localStops.map { stopMap[it.id] ?: it }
+                    if (updated != localStops) {
+                        localStops = updated
+                    }
+                }
             }
 
             val lazyListState = rememberLazyListState()
